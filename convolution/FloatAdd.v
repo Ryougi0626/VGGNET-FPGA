@@ -9,7 +9,6 @@ module FloatAdd(
     reg [23:0] fraction, fractionA, fractionB;
     reg normalize_flag = 1'b0;
 
-
     always @(*) begin
         // sepcial case
         if (floatA == 32'b0) begin
@@ -59,9 +58,19 @@ module FloatAdd(
                     {normalize_flag, fraction} = fractionA - fractionB;
                 end
             end
-            sign = normalize_flag;
 
-            // 4. normalize the fraction
+            // 4. determine the sign of the result
+            if (floatA[31] == floatB[31]) begin
+                sign = floatA[31];  
+            end else begin
+                if (floatA[30:0] > floatB[30:0]) begin
+                    sign = floatA[31];
+                end else begin
+                    sign = floatB[31];
+                end
+            end
+
+            // 5. normalize the fraction
             if (normalize_flag == 1) begin
                 exponent = exponent + 1;
                 fraction = fraction >> 1;
@@ -141,13 +150,32 @@ module FloatAdd(
                 end
             end
 
-            // 5. check the exponent overflow and underflow
+            // 6. round the fraction
+            if (fraction[23] == 1'b1) begin
+                if (fraction[22:0] == 23'b0) begin
+                    if (fraction[23] == 1'b0) begin
+                        fraction = fraction;
+                    end else begin
+                        fraction = fraction + 1'b1;
+                    end
+                end else begin
+                    fraction = fraction + 1'b1;
+                end
+                
+                if (fraction[24] == 1'b1) begin
+                    fraction = fraction >> 1;
+                    exponent = exponent + 1'b1;
+                end
+            end
+
+            // 7. check the exponent overflow and underflow
             if (exponent == 255 || exponent == 0) begin
                 floatSum = {sign, exponent, 23'b0};
             end
             else begin
                 floatSum = {sign, exponent, fraction[22:0]};
             end
+
         end
     end
 

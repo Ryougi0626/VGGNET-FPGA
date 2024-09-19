@@ -1,20 +1,31 @@
-module ComputeUnit(
-    input [31:0] floatA, floatB,
-    output reg [31:0] result
+module ComputeUnit #(
+    parameter DATA_WIDTH = 32
+)(
+    input clk, reset,
+    input [DATA_WIDTH-1:0] floatA, floatB,
+    output reg [DATA_WIDTH-1:0] result
 );
 
-    wire [31:0] FloatMult;
+    wire [DATA_WIDTH-1:0] MultResult;
+    wire [DATA_WIDTH-1:0] AddResult;
 
     FloatMult FM(
         .floatA(floatA),
         .floatB(floatB),
-        .floatProduct(FloatMult)
+        .floatProd(MultResult)
     );
 
     FloatAdd FA(
-        .floatA(FloatMult),
+        .floatA(MultResult),
         .floatB(result),
-        .floatSum(result)
+        .floatSum(AddResult)
     );
 
+    always @(posedge clk or negedge reset) begin
+        if (reset) begin
+            result <= 32'b0;
+        end else begin
+            result <= AddResult;
+        end
+    end
 endmodule
