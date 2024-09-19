@@ -7,37 +7,35 @@ module ConvolutionUnit #(
 
     output reg [DATA_WIDTH-1:0] result
 );
-    parameter CLK_PERIOD = 10;
-
-    wire pulse_start;
-
     integer i;
 
-    PulseGenerator #(
-        .CLK_PERIOD(CLK_PERIOD)
-    ) PG(
-        .clk(clk),
-        .reset(reset),
-        .pulse_start(pulse_start)
-    );
+
+    reg [DATA_WIDTH-1:0] filter_buf, image_buf;
+    wire [DATA_WIDTH-1:0] result_buf;
 
     ComputeUnit CU(
+        .clk(clk),
+        .reset(reset),
         .floatA(filter_buf),
         .floatB(image_buf),
-        .result(result)
+        .result(result_buf)
     );
 
-    reg [31:0] filter_buf, image_buf;
-
-    always @(posedge pulse_start or negedge reset) begin
+    always @(posedge clk or negedge reset) begin
         if(!reset) begin
-            i = 1'b0;
-            filter_buf = 1'b0;
-            image_buf = 1'b0;
+            i = 0;
+            result = 0;
+            filter_buf = 0;
+            image_buf = 0;
         end
-        else begin
+        else if (i < KERNEL_SIZE*KERNEL_SIZE) begin
             filter_buf = filter[DATA_WIDTH*i+:DATA_WIDTH];
             image_buf = image[DATA_WIDTH*i+:DATA_WIDTH];
+            result = result + result_buf;
+            i = i + 1;
+        end else begin
+            i = 0;
+            result = 0;
         end
     end
 endmodule

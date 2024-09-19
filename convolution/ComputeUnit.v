@@ -22,7 +22,7 @@ module ComputeUnit #(
     );
 
     always @(posedge clk or negedge reset) begin
-        if (reset) begin
+        if (!reset) begin
             result <= 32'b0;
         end else begin
             result <= AddResult;
